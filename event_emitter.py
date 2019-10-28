@@ -56,9 +56,10 @@ class EventEmitter:
         return len(self._get_listeners(event))
 
     def add_listener(self, event: str, handler: Callable) -> None:
+        self.emit('new_listener', event, handler)
         self._events[event].append(handler)
 
-    def on(self, event: str, handler: Callable) -> Callable:
+    def on(self, event: str, handler: Optional[Callable] = None) -> Callable:
         def wrapper(fn: Callable) -> Callable:
             self.add_listener(event, fn)
             return fn
@@ -69,11 +70,13 @@ class EventEmitter:
         return wrapper
 
     def preprend_listener(self, event: str, handler: Callable) -> None:
+        self.emit('new_listener', event, handler)
         self._events[event].insert(0, handler)
 
     def remove_listener(self, event: str, handler: Callable) -> None:
         if handler in self._get_listeners(event):
             self._events[event].remove(handler)
+            self.emit('remove_listener', event, handler)
 
     def remove_all_listeners(self, event: Optional[str] = None) -> None:
         if event is not None:
@@ -84,7 +87,7 @@ class EventEmitter:
     def off(self, event: str, handler: Callable) -> None:
         self.remove_listener(event, handler)
 
-    def once(self, event: str, handler: Callable) -> Callable:
+    def once(self, event: str, handler: Optional[Callable] = None) -> Callable:
         def wrapper(fn: Callable) -> Callable:
             @wraps(fn)
             def remove_then_run(*args: Any, **kwargs: Any) -> Any:
@@ -98,3 +101,11 @@ class EventEmitter:
             return wrapper(handler)
 
         return wrapper
+
+    def emit(self, event: str, *args: Any, **kwargs: Any) -> bool:
+        handlers = self._get_listeners(event)
+
+        for handler in handlers:
+            handler(*args, **kwargs)
+
+        return len(handlers) > 0
