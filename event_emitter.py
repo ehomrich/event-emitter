@@ -53,3 +53,32 @@ class EventEmitter:
 
     def count(self, event: str) -> int:
         return len(self._get_listeners(event))
+
+    def add_listener(self, event: str, handler: Callable) -> None:
+        self._events[event].append(handler)
+
+    def on(self, event: str, handler: Optional[Callable] = None) -> Callable:
+        def wrapper(handler: Callable) -> Callable:
+            self.add_listener(event, handler)
+            return handler
+
+        if handler is not None:
+            return wrapper(handler)
+
+        return wrapper
+
+    def preprend_listener(self, event: str, handler: Callable) -> None:
+        self._events[event].insert(0, handler)
+
+    def remove_listener(self, event: str, handler: Callable) -> None:
+        if handler in self._get_listeners(event):
+            self._events[event].remove(handler)
+
+    def remove_all_listeners(self, event: Optional[str] = None) -> None:
+        if event is not None:
+            self._events.pop(event, None)
+        else:
+            self._events.clear()
+
+    def off(self, event: str, handler: Callable) -> None:
+        self.remove_listener(event, handler)
