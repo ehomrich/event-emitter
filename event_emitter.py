@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import DefaultDict, Optional
+from typing import DefaultDict, Optional, Tuple, Union, List, Callable
 
 DEFAULT_MAX_LISTENERS = 10
 
@@ -30,9 +30,26 @@ class EventEmitter:
 
     def set_max_listeners(self, value: int) -> None:
         if not isinstance(value, int):
-            raise TypeError(f"set_max_listeners() argument must be a integer, not '{type(value)}'")
+            raise TypeError(
+                f"set_max_listeners() argument must be a non-negative "
+                f"integer, not '{type(value)}'"
+            )
 
         if value < 0:
-            raise TypeError('set_max_listeners() argument must be a non-negative integer')
+            raise ValueError(
+                'set_max_listeners() argument must be a non-negative integer'
+            )
 
         self._max_listeners = value
+
+    def event_names(self) -> Tuple[str]:
+        return tuple(key for key, val in self._events.items() if len(val) > 0)
+
+    def _get_listeners(self, event: str) -> Union[List[Callable], Tuple]:
+        return self._events.get(event, ())
+
+    def listeners(self, event: str) -> Tuple[Callable]:
+        return tuple(self._get_listeners(event))
+
+    def count(self, event: str) -> int:
+        return len(self._get_listeners(event))
