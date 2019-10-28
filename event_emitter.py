@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import DefaultDict, Optional, Tuple, Union, List, Callable
+from functools import wraps
+from typing import DefaultDict, Optional, Tuple, Union, List, Callable, Any
 
 DEFAULT_MAX_LISTENERS = 10
 
@@ -57,10 +58,10 @@ class EventEmitter:
     def add_listener(self, event: str, handler: Callable) -> None:
         self._events[event].append(handler)
 
-    def on(self, event: str, handler: Optional[Callable] = None) -> Callable:
-        def wrapper(handler: Callable) -> Callable:
-            self.add_listener(event, handler)
-            return handler
+    def on(self, event: str, handler: Callable) -> Callable:
+        def wrapper(fn: Callable) -> Callable:
+            self.add_listener(event, fn)
+            return fn
 
         if handler is not None:
             return wrapper(handler)
@@ -82,3 +83,18 @@ class EventEmitter:
 
     def off(self, event: str, handler: Callable) -> None:
         self.remove_listener(event, handler)
+
+    def once(self, event: str, handler: Callable) -> Callable:
+        def wrapper(fn: Callable) -> Callable:
+            @wraps(fn)
+            def remove_then_run(*args: Any, **kwargs: Any) -> Any:
+                self.remove_listener(event, remove_then_run)
+                fn(*args, **kwargs)
+
+            self.add_listener(event, remove_then_run)
+            return remove_then_run
+
+        if handler is not None:
+            return wrapper(handler)
+
+        return wrapper
