@@ -15,7 +15,7 @@ def greeting(name: str, age: int):
   print(f"Hey there! I'm {name} and I'm {age} years old.")
 
 emitter.emit('greet', name='Émerson', age=25)
-# Hey there! I'm Émerson and I'm 24 years old.
+# Hey there! I'm Émerson and I'm 25 years old.
 ```
 
 ## API
@@ -38,7 +38,7 @@ For an immutable and fail-safe option, use the [listeners](#listenersevent) meth
 ### `del emitter['event_name']`
 Removes the specified event and its list of listeners. Raises a `KeyError` if the event name does not exist.
 
-For a fail-safe option, use the [remove_listeners](#remove_listenerevent-handler) method.
+For a fail-safe option, use the [remove_listener](#remove_listenerevent-handler) method.
 
 ### `'event_name' in emitter`
 Returns `True` if the event name exists, else `False`.
@@ -49,7 +49,7 @@ Getter for the number of listeners allowed for each event (default `10`).
 
 ### `set_max_listeners(value)`
 
-Defines the soft limit of listeners for each event.
+Defines the *soft limit* of listeners for each event.
 
 The argument must be a non-negative integer.
 
@@ -60,6 +60,7 @@ emitter.set_max_listeners(0) # also ok
 emitter.set_max_listeners('3') # TypeError
 emitter.set_max_listeners(-7) # ValueError
 ```
+`EventEmitter` instances will issue a `MaxListenersExceededWarning` when the number of listeners added to a specific event exceeds the defined maximum limit. This is a useful to find memory leaks.
 
 Events whose listeners count were already greater than the new maximum number remain unchanged, but additions of new listeners are subject to the check.
 
@@ -92,6 +93,16 @@ Returns the number of listeners attached to the specified event. Returns `0` it 
 emitter.count('greet')
 # 1
 ```
+
+### `full(event)`
+
+Checks if the specified event has reached the maximum listeners limit.
+
+```python
+emitter.full('greet')
+# False
+```
+
 ### `add_listener(event, handler)`
 
 Appends the handler function to the list of listeners for the specified event.
@@ -126,7 +137,7 @@ Adds as a **one-time** listener for the specified event.
 
 The handler is wrapped and removes itself before being executed the next time the event is triggered.
 
-Uses `add_listener` and `remove_listener` methods under the hood, but the removal event behavior is different. See [default events](#default-events) for more info.
+Uses `add_listener` and `remove_listener` methods under the hood.
 
 As well as `on`, this method can also be used as a decorator:
 
@@ -203,8 +214,6 @@ Fired when a listener is removed from an event, with the event name and a refere
 
 Emitted **after** the listener is removed.
 
-The exception is the `once` method. Since the function to be removed is actually the wrapper that removes the handler, the event is emitted after the wrapper, but *before* the actual handler).
-
 ## TODO
 
 - [x] Implement basic methods
@@ -213,7 +222,7 @@ The exception is the `once` method. Since the function to be removed is actually
 - [x] Add decorator functionality to `on` and `once` methods
 - [x] Implement basic emission logic
 - [x] Add events for new and removed listeners
-- [ ] Add max listeners check
+- [x] Add max listeners check
 - [ ] Review emission and dispatch flow
 - [ ] Add `asyncio` support
 - [ ] Add docstrings
